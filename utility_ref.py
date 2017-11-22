@@ -350,4 +350,52 @@ def possible6(order,constraint):
         collect += [order1]
     return collect
 
+# Given an order, there are two matchings in the constraint
+def utilpossible2(order,constraint,wiz1,wiz2):
+
+    collect = []
+    wiz_a = constraint[0]
+    wiz_b = constraint[1]
+    wiz_c = constraint[2]
+
+    index1 = order.index(wiz1)
+    index2 = order.index(wiz2)
+
+    if (wiz1 != wiz_c) and (wiz2 != wiz_c):
+
+        lower = min(index1,index2)
+        upper = max(index1,index2)
+        for i in range(0,lower+1):
+            order1 = order[:]
+            order1.insert(i,wiz_c)
+            collect += [order1]
+
+        for i in range(upper+1,len(order)+1):
+            order1 = order[:]
+            order1.insert(i,wiz_c)
+            collect += [order1]
+
+    else:
+
+        if (wiz1 == wiz_c):
+            otherwiz = wiz_a if wiz2 == wiz_b else wiz_b
+            c_index = index1
+            o_index = index2
+        elif (wiz2 == wiz_c):
+            otherwiz = wiz_a if wiz1 == wiz_b else wiz_b
+            c_index = index2
+            o_index = index1
+
+        if c_index > o_index:
+            for i in range(0,c_index+1):
+                order1 = order[:]
+                order1.insert(i,otherwiz)
+                collect += [order1]
+        else:
+            for i in range(c_index+1,len(order)+1):
+                order1 = order[:]
+                order1.insert(i,otherwiz)
+                collect += [order1]
+
+    return collect
 

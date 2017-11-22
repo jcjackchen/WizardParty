@@ -78,14 +78,14 @@ def possible(order,constraint):
             return [-1]
     elif wiz_a in order:
         if wiz_c in order:
-            return possible2(order,constraint,wiz_a,wiz_c)
+            return updated_possible2(order,constraint,wiz_a,wiz_c)
         elif wiz_b in order:
-            return possible2(order,constraint,wiz_a,wiz_b)
+            return updated_possible2(order,constraint,wiz_a,wiz_b)
         else:
             return possible1(order,constraint,wiz_a)
     elif wiz_b in order:
         if wiz_c in order:
-            return possible2(order,constraint,wiz_b,wiz_c)
+            return updated_possible2(order,constraint,wiz_b,wiz_c)
         else:
             return possible1(order,constraint,wiz_b)
     elif wiz_c in order:
@@ -162,7 +162,7 @@ def possible1(order,constraint,wiz):
     return collect
 
 # Given an order, there are two matchings in the constraint
-def possible2(order,constraint,wiz1,wiz2):
+def updated_possible2(order,constraint,wiz1,wiz2):
 
     collect = []
     wiz_a = constraint[0]
@@ -172,8 +172,9 @@ def possible2(order,constraint,wiz1,wiz2):
     index1 = order.index(wiz1)
     index2 = order.index(wiz2)
 
-    if (wiz1 != wiz_c) and (wiz2 != wiz_c):
+    if (wiz2 != wiz_c):
 
+        assert(wiz2 == wiz_b)
         lower = min(index1,index2)
         upper = max(index1,index2)
         for i in range(0,lower+1):
@@ -185,30 +186,23 @@ def possible2(order,constraint,wiz1,wiz2):
             order1 = order[:]
             order1.insert(i,wiz_c)
             collect += [order1]
-
     else:
 
-        if (wiz1 == wiz_c):
-            otherwiz = wiz_a if wiz2 == wiz_b else wiz_b
-            c_index = index1
-            o_index = index2
-        elif (wiz2 == wiz_c):
-            otherwiz = wiz_a if wiz1 == wiz_b else wiz_b
-            c_index = index2
-            o_index = index1
+        otherwiz = wiz_b if wiz1 == wiz_a else wiz_a
 
-        if c_index > o_index:
-            for i in range(0,c_index+1):
+        if index2 > index1:
+            for i in range(0,index2+1):
                 order1 = order[:]
                 order1.insert(i,otherwiz)
                 collect += [order1]
         else:
-            for i in range(c_index+1,len(order)+1):
+            for i in range(index2+1,len(order)+1):
                 order1 = order[:]
                 order1.insert(i,otherwiz)
                 collect += [order1]
 
     return collect
+
 
 def strategy1(num_wizards,wizards,constraints):
 
@@ -257,9 +251,10 @@ def strategy1(num_wizards,wizards,constraints):
                 del remain_constraints[candidate[1]]
 
             if (new_collect == []):
-                print("SOMETHING WENT WRONG")
-                print(collect)
-                return collect
+                print("Wrong direction")
+                return collect[0]
+            elif (len(new_collect) > 10000):
+                new_collect = new_collect[::2]
 
             collect = new_collect
             counter -= 1
@@ -302,9 +297,9 @@ def variantion(constraint):
     wiz_b = constraint[1]
     wiz_c = constraint[2]
 
-    return [[wiz_a,wiz_b,wiz_c],[wiz_b,wiz_a,wiz_c],[wiz_c,wiz_a,wiz_b],[wiz_c,wiz_b,wiz_a]]
+    return [constraint,[wiz_b,wiz_a,wiz_c],[wiz_c,wiz_a,wiz_b],[wiz_c,wiz_b,wiz_a]]
 
-def optimization(constraints):
+def find_optimizable(constraints):
 
     pairs = {}
     order = []
@@ -330,9 +325,9 @@ def optimization(constraints):
         else:
             pairs[s] = constraint
 
-    print(len(name))
-    print(name)
-    return sorted(order,key=operator.itemgetter(0))
+    return sorted(order,key=operator.itemgetter(0)), name
+
+def optimization1(wizards,order)
 
 
 

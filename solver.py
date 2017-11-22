@@ -21,12 +21,13 @@ def solve(num_wizards, num_constraints, wizards, constraints):
         An array of wizard names in the ordering your algorithm returns
     """
     constraints = utility.preprocess(wizards,num_constraints,constraints)
-    # a = utility.optimization(constraints)
-    # print(a)
-    output = utility.strategy1(num_wizards,wizards,constraints)
+    opt,name = utility.find_optimizable(constraints)
+    print("optimizable wizards: ", len(name))
+    print("related constraints: ", len(opt))
+    #output = utility.strategy1(num_wizards,wizards,constraints)
     order = [wizards[o] for o in output]
 
-    return 
+    return order
 """
 ======================================================================
    No need to change any code below this line
