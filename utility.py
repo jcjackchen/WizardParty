@@ -1,9 +1,9 @@
 import sys
 import operator
 
-def preprocess(wizards, constraints):
+def preprocess(wizards, num_constraints, constraints):
 	mapped_constraint = wizardsmap(wizards,constraints)
-	return remove_duplicate(mapped_constraint)
+	return remove_duplicate(num_constraints, mapped_constraint)
 
 def wizardsmap(wizards, constraints):
     node_map = {k: v for v, k in enumerate(wizards)}
@@ -17,7 +17,7 @@ def wizardsmap(wizards, constraints):
 
     return mapped_constraint
 
-def remove_duplicate(constraints):
+def remove_duplicate(num_constraints, constraints):
     pairs = {}
     for constraint in constraints:
         wiz = [constraint[0],constraint[1]]
@@ -41,6 +41,7 @@ def remove_duplicate(constraints):
             processed += [[l[0],l[1],c]]
 
     processed = sorted(processed,key=operator.itemgetter(0))
+    print("We have removed " + str(num_constraints - len(processed)) + " duplicated constraints.")
     return processed
 
 def valid(order, constraints):
@@ -95,8 +96,6 @@ def possible(order,constraint):
 
 # Given an order, there's one matching wizards in the constraint. 
 def possible1(order,constraint,wiz):
-
-    print(1)
 
     collect = []
 
@@ -220,6 +219,9 @@ def strategy1(num_wizards,wizards,constraints):
 
     while(len(remain_constraints) > 0 and counter > 0):
 
+        if num_wizards <= 0:
+            break
+
         collect = variantion(remain_constraints[0])
         remain_constraints = remain_constraints[1:]
 
@@ -267,6 +269,7 @@ def strategy1(num_wizards,wizards,constraints):
 
         counter -= 1
         possible_order += [collect[0]]
+        num_wizards -= len(collect[0])
 
     return sum(possible_order,[])
 
