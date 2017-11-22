@@ -1,5 +1,6 @@
 import sys
 import operator
+import random
 
 def preprocess(wizards, num_constraints, constraints):
 	mapped_constraint = wizardsmap(wizards,constraints)
@@ -216,7 +217,7 @@ def strategy1(num_wizards,wizards,constraints):
         if num_wizards <= 0:
             break
 
-        collect = variantion(remain_constraints[0])
+        collect = variation(remain_constraints[0])
         remain_constraints = remain_constraints[1:]
 
         while(len(collect[0]) < num_wizards and len(remain_constraints) > 0 and counter > 0):
@@ -256,6 +257,7 @@ def strategy1(num_wizards,wizards,constraints):
             elif (len(new_collect) > 10000):
                 new_collect = new_collect[::2]
 
+            random.shuffle(new_collect)
             collect = new_collect
             counter -= 1
             # s = "\r" + str(len(remain_constraints)) + " " + str(len(collect)) + " " + str(counter)
@@ -291,7 +293,7 @@ def find_related(order,constraints):
         return []
     return sorted(candidate,key=operator.itemgetter(2),reverse=True)[0]
 
-def variantion(constraint):
+def variation(constraint):
 
     wiz_a = constraint[0]
     wiz_b = constraint[1]
@@ -327,8 +329,9 @@ def find_optimizable(constraints):
 
     return sorted(order,key=operator.itemgetter(0)), name
 
-def optimization1(wizards,order)
+def optimization1(wizards, limited_constraints):
 
+    return
 
 
 
