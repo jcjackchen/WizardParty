@@ -14,7 +14,7 @@ def wizardsmap(wizards, constraints):
         wiz_b = constraint[1]
         wiz_c = constraint[2]
 
-        mapped_constraint += [[node_map[wiz_a],node_map[wiz_b],node_map[wiz_c]]]
+        mapped_constraint.append([node_map[wiz_a],node_map[wiz_b],node_map[wiz_c]])
 
     return mapped_constraint
 
@@ -30,7 +30,7 @@ def remove_duplicate(num_constraints, constraints):
         if s in pairs:
             w = constraint[2]
             if w not in pairs[s]:
-                pairs[s] += [w] 
+                pairs[s].append(w) 
                 pairs[s] = sorted(pairs[s])
         else:
             pairs[s] = [constraint[2]]
@@ -39,7 +39,7 @@ def remove_duplicate(num_constraints, constraints):
     for p in pairs:
         for c in pairs[p]:
             l = list(p)
-            processed += [[l[0],l[1],c]]
+            processed.append([l[0],l[1],c])
 
     processed = sorted(processed,key=operator.itemgetter(0))
     print("We have removed " + str(num_constraints - len(processed)) + " duplicated constraints.")
@@ -63,7 +63,26 @@ def valid(order, constraints):
 
     return True
 
-def possible(order,constraint):
+def validbyIndex(order, constraints, wiz,index):
+
+    node_map = {k: v for v, k in enumerate(order)}
+    for constraint in constraints:
+        wiz_a = constraint[0]
+        wiz_b = constraint[1]
+        wiz_c = constraint[2]
+
+        if (wiz_a in node_map) and (wiz_b in node_map) and (wiz_c in node_map):
+             wiz_a = node_map[wiz_a]
+             wiz_b = node_map[wiz_b]
+             wiz_c = node_map[wiz_c]
+
+             if (wiz_a < wiz_c < wiz_b) or (wiz_b < wiz_c < wiz_a):
+                return False
+
+    return True
+
+
+def possible(order,constraint,condition):
 
     wiz_a = constraint[0]
     wiz_b = constraint[1]
@@ -79,14 +98,14 @@ def possible(order,constraint):
             return [-1]
     elif wiz_a in order:
         if wiz_c in order:
-            return updated_possible2(order,constraint,wiz_a,wiz_c)
+            return validated_possible2(order,constraint,condition,wiz_a,wiz_c)
         elif wiz_b in order:
-            return updated_possible2(order,constraint,wiz_a,wiz_b)
+            return validated_possible2(order,constraint,condition,wiz_a,wiz_b)
         else:
             return possible1(order,constraint,wiz_a)
     elif wiz_b in order:
         if wiz_c in order:
-            return updated_possible2(order,constraint,wiz_b,wiz_c)
+            return validated_possible2(order,constraint,condition,wiz_b,wiz_c)
         else:
             return possible1(order,constraint,wiz_b)
     elif wiz_c in order:
@@ -97,6 +116,8 @@ def possible(order,constraint):
 
 # Given an order, there's one matching wizards in the constraint. 
 def possible1(order,constraint,wiz):
+
+    print(1)
 
     collect = []
 
@@ -116,11 +137,11 @@ def possible1(order,constraint,wiz):
             for j in range(0,index+1):
                 order2 = order1[:]
                 order2.insert(j,wiz_c)
-                collect += [order2]
+                collect.append(order2)
             for j in range(i+1,len(order1)+1):
                 order2 = order1[:]
                 order2.insert(j,wiz_c)
-                collect += [order2]
+                collect.append(order2)
 
         for i in range(0,index+1):
             order1 = order[:]
@@ -128,13 +149,13 @@ def possible1(order,constraint,wiz):
             for j in range(0,i+1):
                 order2 = order1[:]
                 order2.insert(j,wiz_c)
-                collect += [order2]
+                collect.append(order2)
 
             new_index = order1.index(wiz)
             for j in range(new_index+1,len(order1)+1):
                 order2 = order1[:]
                 order2.insert(j,wiz_c)
-                collect += [order2]
+                collect.append(order2)
 
     elif wiz == wiz_c:
         
@@ -144,8 +165,7 @@ def possible1(order,constraint,wiz):
             for j in range(0,index+2):
                 order2 = order1[:]
                 order2.insert(j,wiz_b)
-
-                collect += [order2]
+                collect.append(order2)
 
         for i in range(index+1,len(order)+1):
             order1 = order[:]
@@ -153,8 +173,7 @@ def possible1(order,constraint,wiz):
             for j in range(index+1,len(order1)+1):
                 order2 = order1[:]
                 order2.insert(j,wiz_b)
-
-                collect += [order2]
+                collect.append(order2)
             
     else:
         print("SOMETHING WENT WRONG")
@@ -163,9 +182,10 @@ def possible1(order,constraint,wiz):
     return collect
 
 # Given an order, there are two matchings in the constraint
-def updated_possible2(order,constraint,wiz1,wiz2):
+def validated_possible2(order,constraint,condition,wiz1,wiz2):
 
     collect = []
+
     wiz_a = constraint[0]
     wiz_b = constraint[1]
     wiz_c = constraint[2]
@@ -173,34 +193,54 @@ def updated_possible2(order,constraint,wiz1,wiz2):
     index1 = order.index(wiz1)
     index2 = order.index(wiz2)
 
-    if (wiz2 != wiz_c):
+    possible_index = []
+    otherwiz = None
 
-        assert(wiz2 == wiz_b)
+    if (wiz2 != wiz_c):
+        #assert(wiz2 == wiz_b)
         lower = min(index1,index2)
         upper = max(index1,index2)
-        for i in range(0,lower+1):
-            order1 = order[:]
-            order1.insert(i,wiz_c)
-            collect += [order1]
+        possible_index = list(range(0,lower+1)) + list(range(upper+1,len(order)+1))
+        otherwiz = wiz_c
 
-        for i in range(upper+1,len(order)+1):
-            order1 = order[:]
-            order1.insert(i,wiz_c)
-            collect += [order1]
     else:
-
         otherwiz = wiz_b if wiz1 == wiz_a else wiz_a
-
         if index2 > index1:
-            for i in range(0,index2+1):
-                order1 = order[:]
-                order1.insert(i,otherwiz)
-                collect += [order1]
+            possible_index = list(range(0,index2+1))
         else:
-            for i in range(index2+1,len(order)+1):
-                order1 = order[:]
-                order1.insert(i,otherwiz)
-                collect += [order1]
+            possible_index = list(range(index2+1,len(order)+1))
+
+    copy_possible_index = possible_index[:]
+
+
+    for c in condition:
+
+        if possible_index == []:
+            return []
+        l = len(possible_index)-1
+        toadd = c.index(otherwiz)
+
+        for p in possible_index:
+            wiz1 = p if toadd == 0 else order.index(c[0])
+            wiz2 = p if toadd == 1 else order.index(c[1])
+            wiz3 = p if toadd == 2 else order.index(c[2])
+
+            lower = min(wiz1,wiz2)
+            upper = max(wiz1,wiz2)
+
+            if lower == wiz3 and c[2] != otherwiz:  
+                copy_possible_index.remove(p)
+            elif upper == wiz3 and c[2] == otherwiz:
+                copy_possible_index.remove(p)
+            elif lower < wiz3 < upper:
+                copy_possible_index.remove(p)
+
+        possible_index = copy_possible_index[:]
+        
+    for p in possible_index:
+        order1 = order[:]
+        order1.insert(p,otherwiz)
+        collect.append(order1)
 
     return collect
 
@@ -210,7 +250,7 @@ def strategy1(num_wizards,wizards,constraints):
     possible_order = []
     remain_constraints = constraints[:]
 
-    counter = 1000
+    counter = 10000
 
     while(len(remain_constraints) > 0 and counter > 0):
 
@@ -231,25 +271,23 @@ def strategy1(num_wizards,wizards,constraints):
                 print(collect[0])
                 break
 
-            related = True
+            condition = []
+            if len(candidate) == 3:
+                wizs = collect[0]+candidate[2]
+                condition = find_3_related(wizs,remain_constraints)
+
             pos = []
             for order in collect:
-                pos = possible(order,candidate[0])
+                pos = possible(order,candidate[0],condition)
                 #Invalid order, do not build on 
                 if (pos == [-2]):
                     continue
                 elif (pos == [-1]):
-                    new_collect = collect
+                    new_collect.append(order)
                 elif (pos != []):
-                    for p in pos:
-                        if(valid(p,remain_constraints)):
-                            new_collect += [p]
-                else:
-                    related = False
-                    print("?")
+                    new_collect.extend(pos)
 
-            if (related):
-                del remain_constraints[candidate[1]]
+            del remain_constraints[candidate[1]]
 
             if (new_collect == []):
                 print("Wrong direction")
@@ -265,33 +303,55 @@ def strategy1(num_wizards,wizards,constraints):
             # sys.stdout.flush()
 
         counter -= 1
-        possible_order += [collect[0]]
+        possible_order.append(collect[0])
         num_wizards -= len(collect[0])
 
     return sum(possible_order,[])
 
 def find_related(order,constraints):
 
-    candidate = []
+    candidate2 = []
+    candidate1 = []
 
     for i in range(len(constraints)):
-        matches = 0
+        notmatch = []
+        for c in constraints[i]:
+            if c not in order:
+                notmatch.append(c)
+        num = len(notmatch)
 
-        for o in order:
-            if o in constraints[i]:
+        if num == 0:
+                return [constraints[i],i]
+        elif num == 3:
+            continue
+        elif num == 1:
+            candidate2.append([constraints[i],i,notmatch])
+        else:
+            candidate1.append([constraints[i],i,notmatch])
+        
+    if candidate2 == []:
+        if candidate1 == []:
+            return []
+        else:
+            return candidate1[0]
+    else:
+        return candidate2[0]
+
+def find_3_related(wizs,constraints):
+
+    related = []
+
+    for constraint in constraints:
+        matches = 0
+        for c in constraint:
+            if c in wizs:
                 matches += 1
 
-            if matches == 3:
-                return [constraints[i],i,3]
+        if matches == 3:
+            related.append(constraint)
 
-        if matches == 0:
-            continue
-        else:
-            candidate += [[constraints[i],i,matches]]
+    return related
 
-    if candidate == []:
-        return []
-    return sorted(candidate,key=operator.itemgetter(2),reverse=True)[0]
 
 def variation(constraint):
 
