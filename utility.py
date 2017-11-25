@@ -377,11 +377,9 @@ def strategy2(num_wizards,wizards,constraints):
     possible_order = []
 
     remain_constraints = {3:constraints[:]}
-
-    counter = 100000
     factor = 0.5
 
-    while(len(remain_constraints) > 0 and counter > 0):
+    while(len(remain_constraints) > 0):
 
         if num_wizards <= 0:
             break
@@ -394,7 +392,7 @@ def strategy2(num_wizards,wizards,constraints):
         possible_to_build = []
         current_cons = []
 
-        while(currentlayer < num_wizards and len(remain_constraints) > 0 and counter > 0):
+        while(currentlayer < num_wizards and len(remain_constraints) > 0):
 
             # Remove any empty that's not needed
             remove = [layer for layer in collect if collect[layer] == []]
@@ -422,24 +420,21 @@ def strategy2(num_wizards,wizards,constraints):
                 condition = find_3_related(wizs,current_cons)
 
             # Amount check
-            amount = sum([len(collect[i])for i in collect])
-            if amount > 10000 and notchecking:
+            amount = len(current_pos)
+            if amount > 50000 and notchecking:
                 random.shuffle(current_pos)
                 while len(possible_to_build) < factor * len(current_pos):
                     possible_to_build.append(current_pos.pop())
-                msg = str(len(possible_to_build)) +str(len(current_pos))
+                msg = str(len(possible_to_build)) +" " + str(len(current_pos)) + " " + str(previouslayers[0])
                 sys.stdout.write("\r"+msg)
                 sys.stdout.flush()
-                print("-----------------------------------------")
-                factor /= 2
+                if factor > 0.0625:
+                    factor /= 2
             else:
                 possible_to_build = current_pos
 
-                if (factor < 0.5):
+                if factor < 0.5:
                     factor *= 2
-
-                # if factor < 0.5:
-                #     factor *= 2
 
             # No more related constraints
             if (candidate == []):
@@ -461,7 +456,7 @@ def strategy2(num_wizards,wizards,constraints):
                     new_collect.extend(pos)
 
             if (new_collect == []):
-                msg = "Wrong direction " + str(currentlayer)
+                msg = "Wrong direction " + str(currentlayer) 
                 sys.stdout.write("\r" + msg)
                 sys.stdout.flush()
                 collect.pop(currentlayer)
@@ -479,17 +474,14 @@ def strategy2(num_wizards,wizards,constraints):
             remain_constraints[currentlayer] = current_cons[:]
             del remain_constraints[currentlayer][candidate[1]]
 
-            counter -= 1
+    
             # s = "\r" + str(len(remain_constraints)) + " " + str(len(collect)) + " " + str(counter)
             #sys.stdout.write(s)
             #sys.stdout.flush()
 
-        counter -= 1
         possible_order.append(collect[currentlayer][0])
         num_wizards -= len(collect[currentlayer][0])
         remain_constraints = {3:current_cons}
-
-    print(counter)
 
     return sum(possible_order,[])
 
