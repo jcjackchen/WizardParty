@@ -63,24 +63,6 @@ def valid(order, constraints):
 
     return True
 
-def validbyIndex(order, constraints, wiz,index):
-
-    node_map = {k: v for v, k in enumerate(order)}
-    for constraint in constraints:
-        wiz_a = constraint[0]
-        wiz_b = constraint[1]
-        wiz_c = constraint[2]
-
-        if (wiz_a in node_map) and (wiz_b in node_map) and (wiz_c in node_map):
-             wiz_a = node_map[wiz_a]
-             wiz_b = node_map[wiz_b]
-             wiz_c = node_map[wiz_c]
-
-             if (wiz_a < wiz_c < wiz_b) or (wiz_b < wiz_c < wiz_a):
-                return False
-
-    return True
-
 
 def possible(order,constraint,condition):
 
@@ -117,9 +99,9 @@ def possible(order,constraint,condition):
 # Given an order, there's one matching wizards in the constraint. 
 def possible1(order,constraint,wiz):
 
-    print(1)
-
     collect = []
+
+    print("possible1")
 
     wiz_a = constraint[0]
     wiz_b = constraint[1]
@@ -389,9 +371,128 @@ def find_optimizable(constraints):
 
     return sorted(order,key=operator.itemgetter(0)), name
 
-def optimization1(wizards, limited_constraints):
 
-    return
+def strategy2(num_wizards,wizards,constraints):
+
+    possible_order = []
+
+    remain_constraints = {3:constraints[:]}
+
+    counter = 100000
+    factor = 0.5
+
+    while(len(remain_constraints) > 0 and counter > 0):
+
+        if num_wizards <= 0:
+            break
+
+        currentlayer = 3
+        previouslayers = [3]
+
+        collect = {3:variation(remain_constraints[3][0])}
+        remain_constraints[3] = remain_constraints[3][1:]
+        possible_to_build = []
+        current_cons = []
+
+        while(currentlayer < num_wizards and len(remain_constraints) > 0 and counter > 0):
+
+            # Remove any empty that's not needed
+            remove = [layer for layer in collect if collect[layer] == []]
+            for r in remove:
+                collect.pop(r)
+                remain_constraints.pop(r)
+                previouslayers.remove(r)
+
+            current_pos = collect[currentlayer]
+            current_cons = remain_constraints[currentlayer]
+
+            if (current_pos == []):
+                print(previouslayers, currentlayer)
+                return []
+
+            #Check relevance 
+            notchecking = True
+            candidate = find_related(current_pos[0],current_cons)
+
+            condition = []
+            if len(candidate) == 2:
+                notchecking = False
+            elif len(candidate) == 3:
+                wizs = current_pos[0]+candidate[2]
+                condition = find_3_related(wizs,current_cons)
+
+            # Amount check
+            amount = sum([len(collect[i])for i in collect])
+            if amount > 10000 and notchecking:
+                random.shuffle(current_pos)
+                while len(possible_to_build) < factor * len(current_pos):
+                    possible_to_build.append(current_pos.pop())
+                msg = str(len(possible_to_build)) +str(len(current_pos))
+                sys.stdout.write("\r"+msg)
+                sys.stdout.flush()
+                print("-----------------------------------------")
+                factor /= 2
+            else:
+                possible_to_build = current_pos
+
+                if (factor < 0.5):
+                    factor *= 2
+
+                # if factor < 0.5:
+                #     factor *= 2
+
+            # No more related constraints
+            if (candidate == []):
+                print("No more related constraints! Disjoint Set.")
+                print("Number of remain:",len(current_cons))
+                print(possible_to_build[0])
+                break
+
+            new_collect,pos = [],[]
+            while (possible_to_build != []):
+                order = possible_to_build.pop()
+                pos = possible(order,candidate[0],condition)
+                #Invalid order, do not build on 
+                if (pos == [-2]):
+                    continue
+                elif (pos == [-1]):
+                    new_collect.append(order)
+                elif (pos != []):
+                    new_collect.extend(pos)
+
+            if (new_collect == []):
+                msg = "Wrong direction " + str(currentlayer)
+                sys.stdout.write("\r" + msg)
+                sys.stdout.flush()
+                collect.pop(currentlayer)
+                remain_constraints.pop(currentlayer)
+                previouslayers.pop()
+                currentlayer = previouslayers[-1]
+                continue
+            
+            currentlayer = len(new_collect[0])
+
+            if currentlayer not in previouslayers:
+                previouslayers.append(currentlayer)
+
+            collect[currentlayer] = new_collect
+            remain_constraints[currentlayer] = current_cons[:]
+            del remain_constraints[currentlayer][candidate[1]]
+
+            counter -= 1
+            # s = "\r" + str(len(remain_constraints)) + " " + str(len(collect)) + " " + str(counter)
+            #sys.stdout.write(s)
+            #sys.stdout.flush()
+
+        counter -= 1
+        possible_order.append(collect[currentlayer][0])
+        num_wizards -= len(collect[currentlayer][0])
+        remain_constraints = {3:current_cons}
+
+    print(counter)
+
+    return sum(possible_order,[])
+
 
 
 
