@@ -369,9 +369,7 @@ def strategy2(num_wizards,wizards,constraints):
         while(currentlayer < num_wizards and len(remain_constraints) > 0):
 
             # Remove any empty that's not needed
-            curr = time.process_time()
             remove = [layer for layer in collect if collect[layer] == []]
-            #print(process_time() - curr)
             for r in remove:
                 collect.pop(r)
                 remain_constraints.pop(r)
