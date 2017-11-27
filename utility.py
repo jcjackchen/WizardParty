@@ -376,109 +376,113 @@ def strategy2(num_wizards,wizards,constraints):
         possible_to_build = []
         current_cons = []
 
-        while(currentlayer < num_wizards and len(remain_constraints) > 0):
+        try :
+            while(currentlayer < num_wizards and len(remain_constraints) > 0):
 
-            # Remove any empty that's not needed
-            remove = [layer for layer in collect if collect[layer] == []]
-            for r in remove:
-                collect.pop(r)
-                remain_constraints.pop(r)
-                previouslayers.remove(r)
+                # Remove any empty that's not needed
+                remove = [layer for layer in collect if collect[layer] == []]
+                for r in remove:
+                    collect.pop(r)
+                    remain_constraints.pop(r)
+                    previouslayers.remove(r)
 
-            current_pos = collect[currentlayer]
-            current_cons = remain_constraints[currentlayer]
+                current_pos = collect[currentlayer]
+                current_cons = remain_constraints[currentlayer]
 
-            #Check relevance 
-            notchecking = True
-            candidate = find_related(current_pos[0],current_cons)
+                #Check relevance 
+                notchecking = True
+                candidate = find_related(current_pos[0],current_cons)
 
-            condition = []
-            if len(candidate) == 2:
-                notchecking = False
-            elif len(candidate) == 3:
-                wizs = current_pos[0]+candidate[2]
-                condition = find_3_related(wizs,current_cons)
+                condition = []
+                if len(candidate) == 2:
+                    notchecking = False
+                elif len(candidate) == 3:
+                    wizs = current_pos[0]+candidate[2]
+                    condition = find_3_related(wizs,current_cons)
 
-            # Amount check
-            amount = len(current_pos)
-            if amount > 50000 and notchecking:
-                random.shuffle(current_pos)
-                while len(possible_to_build) < factor * len(current_pos):
-                    possible_to_build.append(current_pos.pop())
-                msg = str(previouslayers[0]) + " " + str(currentlayer)
-                sys.stdout.write("\r"+msg)
-                sys.stdout.flush()
-                if factor > 0.0625:
-                    factor /= 2
-            else:
-                possible_to_build = current_pos
+                # Amount check
+                amount = len(current_pos)
+                if amount > 50000 and notchecking:
+                    random.shuffle(current_pos)
+                    while len(possible_to_build) < factor * len(current_pos):
+                        possible_to_build.append(current_pos.pop())
+                    msg = str(previouslayers[0]) + " " + str(currentlayer)
+                    sys.stdout.write("\r"+msg)
+                    sys.stdout.flush()
+                    if factor > 0.0625:
+                        factor /= 2
+                else:
+                    possible_to_build = current_pos
 
-                if factor < 0.5:
-                    factor *= 2
+                    if factor < 0.5:
+                        factor *= 2
 
-            # No more related constraints
-            if (candidate == []):
-                print("No more related constraints! Disjoint Set.")
-                print("Number of remain:",len(current_cons))
-                print(possible_to_build[0])
-                break
+                # No more related constraints
+                if (candidate == []):
+                    print("No more related constraints! Disjoint Set.")
+                    print("Number of remain:",len(current_cons))
+                    print(possible_to_build[0])
+                    break
 
-            new_collect,pos,recycle = [],[],[]
-            recycle_counter = 10
-            while (possible_to_build != []):
-                order = possible_to_build.pop()
+                new_collect,pos,recycle = [],[],[]
+                recycle_counter = 10
+                while (possible_to_build != []):
+                    order = possible_to_build.pop()
 
-                if recycle_counter > 0:
-                    recycle.append(order)
-                    recycle_counter -= 1
+                    if recycle_counter > 0:
+                        recycle.append(order)
+                        recycle_counter -= 1
 
-                pos = possible(order,candidate[0],condition)
-                #Invalid order, do not build on 
-                if (pos == [-2]):
+                    pos = possible(order,candidate[0],condition)
+                    #Invalid order, do not build on 
+                    if (pos == [-2]):
+                        continue
+                    elif (pos == [-1]):
+                        new_collect.append(order)
+                    elif (pos != []):
+                        new_collect.extend(pos)
+
+                #Recycle Section
+                if(new_collect == []):
+                    for order in recycle:
+                        pos = possible(order,candidate[0],condition,validated=False)
+
+                        for p in pos:
+                            tryout = swap(p,constraints)
+                            if tryout != []:
+                                new_collect.append(tryout)
+
+                if (new_collect == []):
+                    msg = "Wrong direction " + str(currentlayer) 
+                    sys.stdout.write("\r" + msg)
+                    sys.stdout.flush()
+                    if collect[currentlayer] == []:
+                        collect.pop(currentlayer)
+                        remain_constraints.pop(currentlayer)
+                        previouslayers.pop()
+                        currentlayer = previouslayers[-1]
                     continue
-                elif (pos == [-1]):
-                    new_collect.append(order)
-                elif (pos != []):
-                    new_collect.extend(pos)
+                
+                currentlayer = len(new_collect[0])
 
-            #Recycle Section
-            if(new_collect == []):
-                for order in recycle:
-                    pos = possible(order,candidate[0],condition,validated=False)
+                if currentlayer not in previouslayers:
+                    previouslayers.append(currentlayer)
 
-                    for p in pos:
-                        tryout = swap(p,constraints)
-                        if tryout != []:
-                            new_collect.append(tryout)
+                collect[currentlayer] = new_collect[:]
+                remain = current_cons[:]
+                remain_constraints[currentlayer] = remain
 
-            if (new_collect == []):
-                msg = "Wrong direction " + str(currentlayer) 
-                sys.stdout.write("\r" + msg)
-                sys.stdout.flush()
-                if collect[currentlayer] == []:
-                    collect.pop(currentlayer)
-                    remain_constraints.pop(currentlayer)
-                    previouslayers.pop()
-                    currentlayer = previouslayers[-1]
-                continue
-            
-            currentlayer = len(new_collect[0])
+                del remain[candidate[1]]
+                for c in condition:
+                    if c in remain:
+                        remain.remove(c)
 
-            if currentlayer not in previouslayers:
-                previouslayers.append(currentlayer)
+                # s = "\r" + str(len(remain_constraints)) + " " + str(len(collect)) + " " + str(counter)
+                #sys.stdout.write(s)
+                #sys.stdout.flush()
 
-            collect[currentlayer] = new_collect[:]
-            remain = current_cons[:]
-            remain_constraints[currentlayer] = remain
-
-            del remain[candidate[1]]
-            for c in condition:
-                if c in remain:
-                    remain.remove(c)
-
-            # s = "\r" + str(len(remain_constraints)) + " " + str(len(collect)) + " " + str(counter)
-            #sys.stdout.write(s)
-            #sys.stdout.flush()
+        except KeyboardInterrupt:
+            return collect[currentlayer][0]
 
         possible_order.append(collect[currentlayer][0])
         num_wizards -= len(collect[currentlayer][0])
