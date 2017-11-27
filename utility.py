@@ -1,6 +1,8 @@
 import sys
 import operator
 import random
+import utility_ref
+import time
 
 def preprocess(wizards, num_constraints, constraints):
 	mapped_constraint = wizardsmap(wizards,constraints)
@@ -343,34 +345,6 @@ def variation(constraint):
 
     return [constraint,[wiz_b,wiz_a,wiz_c],[wiz_c,wiz_a,wiz_b],[wiz_c,wiz_b,wiz_a]]
 
-def find_optimizable(constraints):
-
-    pairs = {}
-    order = []
-    name = []
-
-    for constraint in constraints:
-        s = frozenset(constraint)
-
-        if s in pairs:
-            c = pairs[s]
-            wiz_a = c[2]
-            wiz_c = constraint[2]
-            wiz_b = c[0] if c[0] != wiz_c else c[1]
-
-            if wiz_a not in name:
-                name += [wiz_a]
-            if wiz_b not in name:
-                name += [wiz_b]
-            if wiz_c not in name:
-                name += [wiz_c]
-
-            order += [[wiz_a,wiz_b,wiz_c],[wiz_c,wiz_b,wiz_a]]
-        else:
-            pairs[s] = constraint
-
-    return sorted(order,key=operator.itemgetter(0)), name
-
 
 def strategy2(num_wizards,wizards,constraints):
 
@@ -395,7 +369,9 @@ def strategy2(num_wizards,wizards,constraints):
         while(currentlayer < num_wizards and len(remain_constraints) > 0):
 
             # Remove any empty that's not needed
+            curr = time.process_time()
             remove = [layer for layer in collect if collect[layer] == []]
+            #print(process_time() - curr)
             for r in remove:
                 collect.pop(r)
                 remain_constraints.pop(r)
@@ -403,10 +379,6 @@ def strategy2(num_wizards,wizards,constraints):
 
             current_pos = collect[currentlayer]
             current_cons = remain_constraints[currentlayer]
-
-            if (current_pos == []):
-                print(previouslayers, currentlayer)
-                return []
 
             #Check relevance 
             notchecking = True
@@ -421,11 +393,11 @@ def strategy2(num_wizards,wizards,constraints):
 
             # Amount check
             amount = len(current_pos)
-            if amount > 50000 and notchecking:
+            if amount > 1 and notchecking:
                 random.shuffle(current_pos)
                 while len(possible_to_build) < factor * len(current_pos):
                     possible_to_build.append(current_pos.pop())
-                msg = str(len(possible_to_build)) +" " + str(len(current_pos)) + " " + str(previouslayers[0])
+                msg = str(previouslayers[0]) + " " + str(currentlayer)
                 sys.stdout.write("\r"+msg)
                 sys.stdout.flush()
                 if factor > 0.0625:
@@ -459,10 +431,11 @@ def strategy2(num_wizards,wizards,constraints):
                 msg = "Wrong direction " + str(currentlayer) 
                 sys.stdout.write("\r" + msg)
                 sys.stdout.flush()
-                collect.pop(currentlayer)
-                remain_constraints.pop(currentlayer)
-                previouslayers.pop()
-                currentlayer = previouslayers[-1]
+                if collect[currentlayer] == []:
+                    collect.pop(currentlayer)
+                    remain_constraints.pop(currentlayer)
+                    previouslayers.pop()
+                    currentlayer = previouslayers[-1]
                 continue
             
             currentlayer = len(new_collect[0])
@@ -470,9 +443,14 @@ def strategy2(num_wizards,wizards,constraints):
             if currentlayer not in previouslayers:
                 previouslayers.append(currentlayer)
 
-            collect[currentlayer] = new_collect
-            remain_constraints[currentlayer] = current_cons[:]
-            del remain_constraints[currentlayer][candidate[1]]
+            collect[currentlayer] = new_collect[:]
+            remain = current_cons[:]
+            remain_constraints[currentlayer] = remain
+
+            del remain[candidate[1]]
+            for c in condition:
+                if c in remain:
+                    remain.remove(c)
 
     
             # s = "\r" + str(len(remain_constraints)) + " " + str(len(collect)) + " " + str(counter)
@@ -484,6 +462,84 @@ def strategy2(num_wizards,wizards,constraints):
         remain_constraints = {3:current_cons}
 
     return sum(possible_order,[])
+
+def find_optimizable(constraints):
+
+    remain_constraints = constraints[:]
+
+    pairs = {}
+    order = []
+    name = []
+
+    for constraint in constraints:
+        s = frozenset(constraint)
+
+        if s in pairs:
+            c = pairs[s]
+            wiz_a = c[2]
+            wiz_c = constraint[2]
+            wiz_b = c[0] if c[0] != wiz_c else c[1]
+
+            if wiz_a not in name:
+                name.append(wiz_a)
+            if wiz_b not in name:
+                name.append(wiz_b)
+            if wiz_c not in name:
+                name.append(wiz_c)
+
+            order.append([wiz_a,wiz_b,wiz_c])
+            order.append([wiz_c,wiz_b,wiz_a])
+        else:
+            pairs[s] = constraint
+
+    for constraint in constraints:
+        wiz_a = constraint[0]
+        wiz_b = constraint[1]
+        wiz_c = constraint[2]
+
+        if wiz_a in name and wiz_b in name and wiz_c in name:
+            remain_constraints.remove(constraint)
+
+    return order, name, remain_constraints
+
+def optimization1(constraints,full_constraints,wizards):
+
+    remain_constraints = constraints[:]
+    collect = [remain_constraints[0],remain_constraints[1]]
+    print(collect)
+    remain_constraints = remain_constraints[2:]
+
+
+    while len(remain_constraints) > 0 :
+
+        constraint1 = remain_constraints.pop()
+        constraint2 = remain_constraints.pop()
+
+        new_collect = []
+        for order in collect:
+            pos1 = utility_ref.possible(order,constraint1)
+            pos2 = utility_ref.possible(order,constraint2)
+
+            if (pos1 == [-1] or pos2 == [-1]):
+                new_collect.append(order)
+            else:
+                for p in pos1:
+                    if valid(p,full_constraints):
+                        new_collect.append(p)
+                for p in pos2:
+                    if valid(p,full_constraints):
+                        new_collect.append(p)
+
+        if collect != []:
+            print(collect[0],collect[1])
+        collect = new_collect
+
+    return collect[0]
+
+
+
+
+
 
 
 

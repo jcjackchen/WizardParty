@@ -226,7 +226,7 @@ def possible(order,constraint):
     elif wiz_b in order:
         return possible3(order,constraint)
     else:
-        return []
+        return possible7(order,constraint)
 
 #constraint 0 matches
 def possible1(order, constraint):
@@ -348,6 +348,28 @@ def possible6(order,constraint):
         order1.insert(i,wiz_a)
 
         collect += [order1]
+    return collect
+
+def possible7(order,constraint):
+
+    collect = []
+    wiz_a = constraint[0]
+    wiz_b = constraint[1]
+    wiz_c = constraint[2]
+
+    for i in range(len(order)+1):
+        order1 = order[:]
+        order1.insert(i,wiz_a)
+
+        for j in range(i+1,len(order1)+1):
+            order2 = order1[:]
+            order2.insert(j,wiz_b)
+
+            for k in range(j+1,len(order2)+1):
+                order3 = order2[:]
+                order3.insert(k,wiz_c)
+                collect += [order3]
+                
     return collect
 
 # Given an order, there are two matchings in the constraint
