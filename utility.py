@@ -66,7 +66,7 @@ def valid(order, constraints):
     return True
 
 
-def possible(order,constraint,condition):
+def possible(order,constraint,condition,validated=True):
 
     wiz_a = constraint[0]
     wiz_b = constraint[1]
@@ -82,14 +82,24 @@ def possible(order,constraint,condition):
             return [-1]
     elif wiz_a in order:
         if wiz_c in order:
-            return validated_possible2(order,constraint,condition,wiz_a,wiz_c)
+            if validated:
+                return validated_possible2(order,constraint,condition,wiz_a,wiz_c)
+            else:
+                return utility_ref.utilpossible2(order,constraint,wiz_a,wiz_c)
+
         elif wiz_b in order:
-            return validated_possible2(order,constraint,condition,wiz_a,wiz_b)
+            if validated:
+                return validated_possible2(order,constraint,condition,wiz_a,wiz_b)
+            else:
+                return utility_ref.utilpossible2(order,constraint,wiz_a,wiz_b)
         else:
             return possible1(order,constraint,wiz_a)
     elif wiz_b in order:
         if wiz_c in order:
-            return validated_possible2(order,constraint,condition,wiz_b,wiz_c)
+            if validated:
+                return validated_possible2(order,constraint,condition,wiz_b,wiz_c)
+            else:
+                return utility_ref.utilpossible2(order,constraint,wiz_b,wiz_c)
         else:
             return possible1(order,constraint,wiz_b)
     elif wiz_c in order:
@@ -413,9 +423,15 @@ def strategy2(num_wizards,wizards,constraints):
                 print(possible_to_build[0])
                 break
 
-            new_collect,pos = [],[]
+            new_collect,pos,recycle = [],[],[]
+            recycle_counter = 10
             while (possible_to_build != []):
                 order = possible_to_build.pop()
+
+                if recycle_counter > 0:
+                    recycle.append(order)
+                    recycle_counter -= 1
+
                 pos = possible(order,candidate[0],condition)
                 #Invalid order, do not build on 
                 if (pos == [-2]):
@@ -424,6 +440,16 @@ def strategy2(num_wizards,wizards,constraints):
                     new_collect.append(order)
                 elif (pos != []):
                     new_collect.extend(pos)
+
+            #Recycle Section
+            if(new_collect == []):
+                for order in recycle:
+                    pos = possible(order,candidate[0],condition,validated=False)
+
+                    for p in pos:
+                        tryout = swap(p,constraints)
+                        if tryout != []:
+                            new_collect.append(tryout)
 
             if (new_collect == []):
                 msg = "Wrong direction " + str(currentlayer) 
@@ -450,7 +476,6 @@ def strategy2(num_wizards,wizards,constraints):
                 if c in remain:
                     remain.remove(c)
 
-    
             # s = "\r" + str(len(remain_constraints)) + " " + str(len(collect)) + " " + str(counter)
             #sys.stdout.write(s)
             #sys.stdout.flush()
@@ -533,6 +558,11 @@ def optimization1(constraints,full_constraints,wizards):
         collect = new_collect
 
     return collect[0]
+
+def swap(order, constraints):
+
+    return utility_ref.brute_force(order,constraints)
+
 
 
 

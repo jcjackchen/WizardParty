@@ -1,7 +1,7 @@
 import sys
 import operator
 
-def brute_force(num_wizards, num_constraints, wizards, constraints):
+def brute_force(wizards, constraints):
 
     node_map = {k: v for v, k in enumerate(wizards)}
     tryout = [node_map]
@@ -13,13 +13,20 @@ def brute_force(num_wizards, num_constraints, wizards, constraints):
         status = False
         counter += 1
 
-        for i in range(num_constraints):
+        for i in range(len(constraints)):
             
             constraint = constraints[i]
 
-            wiz_a = node_map[constraint[0]]
-            wiz_b = node_map[constraint[1]]
-            wiz_mid = node_map[constraint[2]]
+            wiz_a = constraint[0]
+            wiz_b = constraint[1]
+            wiz_mid = constraint[2]
+
+            if wiz_a not in node_map or wiz_b not in node_map or wiz_mid not in node_map:
+                continue
+
+            wiz_a = node_map[wiz_a]
+            wiz_b = node_map[wiz_b]
+            wiz_mid = node_map[wiz_mid]
 
             if (wiz_a < wiz_mid < wiz_b) or (wiz_b < wiz_mid < wiz_a):
                 new_node = node_map.copy()
@@ -30,20 +37,18 @@ def brute_force(num_wizards, num_constraints, wizards, constraints):
                     new_node[constraint[2]],new_node[constraint[1]] = new_node[constraint[1]],new_node[constraint[2]]
 
                     if (new_node in tryout):
-                        return new_node
+                        return []
 
                 node_map = new_node
                 tryout+=[node_map]
                 status = True
                 break
-        sys.stdout.write("\r%d" % counter)
-        sys.stdout.flush()
 
         if(counter == 50000):
+            print("noooo")
             break
 
     s = sorted(node_map.items(), key=operator.itemgetter(1))
-    print(dup)
     return [i[0] for i in s]
 
 
