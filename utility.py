@@ -393,7 +393,7 @@ def strategy2(num_wizards,wizards,constraints):
 
             # Amount check
             amount = len(current_pos)
-            if amount > 1 and notchecking:
+            if amount > 50000 and notchecking:
                 random.shuffle(current_pos)
                 while len(possible_to_build) < factor * len(current_pos):
                     possible_to_build.append(current_pos.pop())
