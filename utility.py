@@ -113,7 +113,8 @@ def possible1(order,constraint,wiz):
 
     collect = []
 
-    print("possible1")
+    sys.stdout.write("\rpossible1")
+    sys.stdout.flush()
 
     wiz_a = constraint[0]
     wiz_b = constraint[1]
@@ -315,7 +316,7 @@ def find_related(order,constraints):
         num = len(notmatch)
 
         if num == 0:
-                return [constraints[i],i]
+                return [constraints[i],i],3
         elif num == 3:
             continue
         elif num == 1:
@@ -327,9 +328,9 @@ def find_related(order,constraints):
         if candidate1 == []:
             return []
         else:
-            return candidate1[0]
+            return candidate1,1
     else:
-        return candidate2[0]
+        return candidate2,2
 
 def find_3_related(wizs,constraints):
 
@@ -353,7 +354,9 @@ def variation(constraint):
     wiz_b = constraint[1]
     wiz_c = constraint[2]
 
-    return [constraint,[wiz_b,wiz_a,wiz_c],[wiz_c,wiz_a,wiz_b],[wiz_c,wiz_b,wiz_a]]
+    result = [constraint,[wiz_b,wiz_a,wiz_c],[wiz_c,wiz_a,wiz_b],[wiz_c,wiz_b,wiz_a]]
+    random.shuffle(result)
+    return result
 
 
 def strategy2(num_wizards,wizards,constraints):
@@ -362,6 +365,7 @@ def strategy2(num_wizards,wizards,constraints):
 
     remain_constraints = {3:constraints[:]}
     factor = 0.5
+    deadend = None
 
     while(len(remain_constraints) > 0):
 
@@ -375,9 +379,12 @@ def strategy2(num_wizards,wizards,constraints):
         remain_constraints[3] = remain_constraints[3][1:]
         possible_to_build = []
         current_cons = []
+        longest_len = 0
+        longest_seq = []
 
         try :
             while(currentlayer < num_wizards and len(remain_constraints) > 0):
+
 
                 # Remove any empty that's not needed
                 remove = [layer for layer in collect if collect[layer] == []]
@@ -386,36 +393,46 @@ def strategy2(num_wizards,wizards,constraints):
                     remain_constraints.pop(r)
                     previouslayers.remove(r)
 
+
+                # Layer information 
+                msg = str(previouslayers[0]) + " " + str(currentlayer)
+                sys.stdout.write("\r"+msg)
+                sys.stdout.flush()
+
                 current_pos = collect[currentlayer]
                 current_cons = remain_constraints[currentlayer]
 
+                if currentlayer > longest_len and current_pos!=[]:
+                    longest_len = currentlayer
+                    longest_seq = current_pos[0]
+
                 #Check relevance 
                 notchecking = True
-                candidate = find_related(current_pos[0],current_cons)
+                candidates, related = find_related(current_pos[0],current_cons)
 
-                condition = []
-                if len(candidate) == 2:
+                conditions,condition,candidate = [],[],[]
+                if related == 3:
                     notchecking = False
-                elif len(candidate) == 3:
-                    wizs = current_pos[0]+candidate[2]
-                    condition = find_3_related(wizs,current_cons)
+                else:
+                    for c in candidates:
+                        wizs = current_pos[0]+ c[2]
+                        conditions.append(find_3_related(wizs,current_cons))
+
+                    for i in range(len(conditions)):
+                        if len(condition) < len(conditions[i]):
+                            condition = conditions[i]
+                            candidate = candidates[i]
 
                 # Amount check
                 amount = len(current_pos)
                 if amount > 50000 and notchecking:
                     random.shuffle(current_pos)
+                    factor = 1 / currentlayer
                     while len(possible_to_build) < factor * len(current_pos):
                         possible_to_build.append(current_pos.pop())
-                    msg = str(previouslayers[0]) + " " + str(currentlayer)
-                    sys.stdout.write("\r"+msg)
-                    sys.stdout.flush()
-                    if factor > 0.0625:
-                        factor /= 2
+                    
                 else:
                     possible_to_build = current_pos
-
-                    if factor < 0.5:
-                        factor *= 2
 
                 # No more related constraints
                 if (candidate == []):
@@ -425,7 +442,8 @@ def strategy2(num_wizards,wizards,constraints):
                     break
 
                 new_collect,pos,recycle = [],[],[]
-                recycle_counter = 10
+                recycle_counter = 5
+
                 while (possible_to_build != []):
                     order = possible_to_build.pop()
 
@@ -442,20 +460,33 @@ def strategy2(num_wizards,wizards,constraints):
                     elif (pos != []):
                         new_collect.extend(pos)
 
+                recycle_counter = 10
                 #Recycle Section
                 if(new_collect == []):
                     for order in recycle:
-                        pos = possible(order,candidate[0],condition,validated=False)
-
+                        pos = possible(order,candidate[0],[],validated=False)
+                        
                         for p in pos:
                             tryout = swap(p,constraints)
                             if tryout != []:
                                 new_collect.append(tryout)
+                            elif recycle_counter > 0 and deadend != None and currentlayer >= deadend:
+                                tryout = combination(p,constraints)
+                                recycle_counter -= 1
+                                if tryout != []:
+                                    new_collect.append(tryout)
+                                    print("worked")
 
                 if (new_collect == []):
                     msg = "Wrong direction " + str(currentlayer) 
                     sys.stdout.write("\r" + msg)
                     sys.stdout.flush()
+
+                    if deadend == None:
+                        deadend = currentlayer
+                    else:
+                        deadend = None
+
                     if collect[currentlayer] == []:
                         collect.pop(currentlayer)
                         remain_constraints.pop(currentlayer)
@@ -482,7 +513,9 @@ def strategy2(num_wizards,wizards,constraints):
                 #sys.stdout.flush()
 
         except KeyboardInterrupt:
-            return collect[currentlayer][0]
+            print("\n",longest_len)
+            print([wizards[i] for i in longest_seq])
+            return longest_seq
 
         possible_order.append(collect[currentlayer][0])
         num_wizards -= len(collect[currentlayer][0])
@@ -564,8 +597,22 @@ def optimization1(constraints,full_constraints,wizards):
     return collect[0]
 
 def swap(order, constraints):
+    
+    result =  utility_ref.brute_force(order,constraints)
+    return result
 
-    return utility_ref.brute_force(order,constraints)
+def combination(order, constraints):
+
+    result = utility_ref.brute_force2(order,constraints)
+    return result
+
+
+# def order_builder(constraint,constraints):
+
+
+# def strategy3(num_wizards,wizards,constraints):
+
+
 
 
 

@@ -44,12 +44,81 @@ def brute_force(wizards, constraints):
                 status = True
                 break
 
-        if(counter == 50000):
-            print("noooo")
+        if(counter == 10000):
+            print("strategy1 counter exceed")
             break
 
     s = sorted(node_map.items(), key=operator.itemgetter(1))
     return [i[0] for i in s]
+
+def brute_force2(wizards, constraints):
+
+    order = wizards[:]
+    tryout = [order]
+
+    status = True
+    counter = 0
+    dup = 0
+
+    while(status):
+        status = False
+        counter += 1
+
+        for i in range(len(constraints)):
+            
+            constraint = constraints[i]
+
+            wiz_a = constraint[0]
+            wiz_b = constraint[1]
+            wiz_c = constraint[2]
+
+            if wiz_a not in order or wiz_b not in order or wiz_c not in order:
+                continue
+
+            wiz_a = order.index(wiz_a)
+            wiz_b = order.index(wiz_b)
+            wiz_c = order.index(wiz_c)
+
+            low = min(wiz_a,wiz_b)
+            high = max(wiz_a,wiz_b)
+
+            if low < wiz_c < high:
+
+                new_order = order[:]
+                order = None
+                del new_order[wiz_c]
+
+                for index in range(0, low+1):
+                    new_order.insert(index,constraint[2])
+                    if new_order in tryout:
+                        del new_order[index]
+                    else:
+                        tryout.append(new_order)
+                        order = new_order[:]
+                        break
+
+                if order == None:
+                    for index in range(high+1,len(wizards)):
+                        new_order.insert(index,constraint[2])
+                        if new_order in tryout:
+                            del new_order[index]
+                        else:
+                            tryout.append(new_order)
+                            order = new_order[:]
+                            break
+                if order == None:
+                    return []
+
+                status = True
+                break
+
+        if(counter == 5000):
+            sys.stdout.write("\rstrategy2 counter exceed")
+            sys.stdout.flush()
+            return []
+
+    return order
+
 
 
 def preprocess(constraints):
